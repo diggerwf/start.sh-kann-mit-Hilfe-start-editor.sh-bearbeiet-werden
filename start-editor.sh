@@ -30,11 +30,14 @@ update_code_block() {
         fi
     fi
 
-    # Generierten Codeblock erstellen
+    # Generierten Codeblock erstellen (mit korrektem Vergleich)
+    # Wir nehmen nur den Nummernteil vor ')', z.B. '3'
+    menu_number=$(echo "$neue_auswahl" | grep -oE '^[0-9]+')
+
     code_block=$(cat <<EOF
 
 $marker
-elif [ "\$auswahl" == "$(echo "$neue_auswahl" | cut -d')' -f1)" ]; then
+elif [ "\$auswahl" == "$menu_number" ]; then
     if [ -f "$datei" ]; then
         ./\"$datei\"
         echo "\"$datei\" wurde ausgeführt."
@@ -46,15 +49,14 @@ fi
 EOF
 )
 
-    # Marker prüfen; falls nicht vorhanden, hinzufügen
+    # Marker prüfen; falls nicht vorhanden, hinzufügen am Ende der Datei
     if ! grep -q "$marker" "$TARGET_FILE"; then
         echo "$marker" >> "$TARGET_FILE"
-        echo "Marker '$marker' wurde am Ende von $TARGET_FILE hinzugefügt."
+        echo "Marker '$marker' wurde am Ende von $TARGET_FILE' hinzugefügt."
     fi
 
-    # Codeblock an Stelle des Markers einfügen/ersetzen
-    sed -i "/$marker/c\\
-$code_block" "$TARGET_FILE"
+    # Den Codeblock an die Stelle des Markers einfügen/ersetzen
+    sed -i "/$marker/c\\$code_block" "$TARGET_FILE"
 
     echo "Codeblock wurde in $TARGET_FILE aktualisiert."
 }
