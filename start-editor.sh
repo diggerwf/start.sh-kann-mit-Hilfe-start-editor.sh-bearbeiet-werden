@@ -11,39 +11,11 @@ fi
 
 TARGET_FILE="$datei_name"
 
-# Funktion zum Anzeigen der aktuellen Optionen
-show_current_options() {
-    echo "Aktuelle Optionen in $TARGET_FILE:"
-    grep -E 'echo "[0-9]+\)' "$TARGET_FILE"
-}
-
-# Funktion zum Entfernen der Zeile mit "update"
-remove_update_line() {
-    sed -i '/update/d' "$TARGET_FILE"
-}
-
-# Funktion zum Hinzufügen einer neuen Option
-add_option() {
-    read -p "Gib den Text für die neue Option ein (z.B. '3) Neue Funktion'): " new_option_line
-    # Entferne alte 'update'-Zeile falls vorhanden
-    remove_update_line
-    # Füge die neue Zeile ans Ende hinzu
-    echo "$new_option_line" >> "$TARGET_FILE"
-    echo "Neue Option wurde hinzugefügt."
-}
-
-# Funktion für die Automatisierung: Code in start.sh einfügen
-insert_code_block() {
-    # Beispiel: Markierung im start.sh, wo der Code eingefügt werden soll
+# Funktion zum Hinzufügen oder Aktualisieren des Codeblocks bei Marker
+update_code_block() {
     marker="# --- AUTOMATION BLOCK ---"
 
-    # Prüfen, ob Marker existiert; wenn nicht, hinzufügen
-    if ! grep -q "$marker" "$TARGET_FILE"; then
-        echo "$marker" >> "$TARGET_FILE"
-        echo "Marker '$marker' wurde am Ende von $TARGET_FILE hinzugefügt."
-    fi
-
-    # Generierten Codeblock erstellen (Beispiel)
+    # Generierten Codeblock (kann nach Bedarf angepasst werden)
     code_block=$(cat <<EOF
 
 $marker
@@ -51,8 +23,6 @@ elif [ "\$auswahl" == "2" ]; then
     if [ -f "datei2" ]; then
         chmod +x "datei2"
         ./\"\$datei2\"
-        # Hier kannst du noch weiteren Code hinzufügen
-        # z.B. das Programm starten oder eine Nachricht ausgeben
         echo "datei2 wurde ausgeführt."
     fi
 fi
@@ -60,33 +30,32 @@ fi
 EOF
 )
 
-    # Den Codeblock an die Stelle des Markers einfügen (ersetzen oder hinzufügen)
-    sed -i "/$marker/{
-        c\\
-$code_block
-}" "$TARGET_FILE"
+    # Prüfen, ob der Marker existiert; wenn nicht, hinzufügen
+    if ! grep -q "$marker" "$TARGET_FILE"; then
+        echo "$marker" >> "$TARGET_FILE"
+        echo "Marker '$marker' wurde am Ende von $TARGET_FILE' hinzugefügt."
+    fi
 
-    echo "Codeblock wurde in $TARGET_FILE eingefügt/ersetzt."
+    # Den Codeblock an die Stelle des Markers einfügen/ersetzen
+    sed -i "/$marker/c\\
+$code_block" "$TARGET_FILE"
+
+    echo "Codeblock wurde in $TARGET_FILE aktualisiert."
 }
 
-# Hauptmenü mit erweiterten Optionen
+# Hauptmenü mit Optionen
 while true; do
-    show_current_options
     echo ""
     echo "Was möchtest du tun?"
-    echo "1) Neue Option hinzufügen"
-    echo "2) Automatisierungscode einfügen/aktualisieren"
-    echo "3) Beenden"
-    read -p "Wähle eine Nummer (1-3): " choice
+    echo "1) Automatisierungscode einfügen/aktualisieren"
+    echo "2) Beenden"
+    read -p "Wähle eine Nummer (1-2): " choice
 
     case $choice in
         1)
-            add_option
+            update_code_block
             ;;
         2)
-            insert_code_block
-            ;;
-        3)
             echo "Beendet."
             break
             ;;
@@ -94,5 +63,4 @@ while true; do
             echo "Ungültige Eingabe. Bitte versuche es erneut."
             ;;
     esac
-    echo ""
 done
