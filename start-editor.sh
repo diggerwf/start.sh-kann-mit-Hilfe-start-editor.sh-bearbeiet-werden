@@ -15,28 +15,44 @@ TARGET_FILE="$datei_name"
 update_code_block() {
     marker="# --- AUTOMATION BLOCK ---"
 
-    # Generierten Codeblock (kann nach Bedarf angepasst werden)
+    # Neue Auswahlname und Dateiname abfragen
+    read -p "Wie soll die neue Auswahl heißen? (z.B. '3) Neue Funktion'): " neue_auswahl
+    read -p "Wie heißt die Datei, die ausgeführt werden soll? (z.B. 'datei3'): " datei
+    read -p "Soll die Datei mit chmod +x ausführbar gemacht werden? (j/n): " chmod_antwort
+
+    # Falls ja, dann chmod +x ausführen
+    if [[ "$chmod_antwort" == [jJ] || "$chmod_antwort" == [jJ][aA][nN] ]]; then
+        if [ -f "$datei" ]; then
+            chmod +x "$datei"
+            echo "$datei wurde ausführbar gemacht."
+        else
+            echo "Warnung: Die Datei '$datei' wurde nicht gefunden."
+        fi
+    fi
+
+    # Generierten Codeblock erstellen
     code_block=$(cat <<EOF
 
 $marker
-elif [ "\$auswahl" == "2" ]; then
-    if [ -f "datei2" ]; then
-        chmod +x "datei2"
-        ./\"\$datei2\"
-        echo "datei2 wurde ausgeführt."
+elif [ "\$auswahl" == "$(echo "$neue_auswahl" | cut -d')' -f1)" ]; then
+    if [ -f "$datei" ]; then
+        ./\"$datei\"
+        echo "\"$datei\" wurde ausgeführt."
+    else
+        echo "Datei \"$datei\" nicht gefunden!"
     fi
 fi
 
 EOF
 )
 
-    # Prüfen, ob der Marker existiert; wenn nicht, hinzufügen
+    # Marker prüfen; falls nicht vorhanden, hinzufügen
     if ! grep -q "$marker" "$TARGET_FILE"; then
         echo "$marker" >> "$TARGET_FILE"
-        echo "Marker '$marker' wurde am Ende von $TARGET_FILE' hinzugefügt."
+        echo "Marker '$marker' wurde am Ende von $TARGET_FILE hinzugefügt."
     fi
 
-    # Den Codeblock an die Stelle des Markers einfügen/ersetzen
+    # Codeblock an Stelle des Markers einfügen/ersetzen
     sed -i "/$marker/c\\
 $code_block" "$TARGET_FILE"
 
